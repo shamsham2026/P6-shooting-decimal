@@ -172,7 +172,7 @@
 
     <!-- 底部觸控指引 (平板友善) -->
     <div class="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none bg-black/40 backdrop-blur-sm px-4 py-1 rounded-full border border-emerald-500/30 text-emerald-200 text-xs text-center flex items-center gap-1">
-      <span>📱 點擊空中攜帶正確答案的翼龍即可發射龍蛋火球！</span>
+      <span>📱 點擊空中正確答案的翼龍即可發射！</span>
     </div>
   </main>
 
@@ -201,10 +201,9 @@
       <h2 class="text-lg font-bold text-emerald-300 mb-4">分數除法與四則運算訓練基地</h2>
       
       <div class="bg-black/40 rounded-2xl p-4 text-left border border-emerald-800/80 mb-5 text-emerald-100 text-sm space-y-2.5">
-        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">1. 靶標射擊：</span>天空中有攜帶答案的翼龍，直接<span class="text-amber-300 font-bold">點擊/觸碰</span>正確答案發射恐龍火球！</p>
-        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">2. 精確分數：</span>全部使用標準垂直上下分數排版，無斜線困擾。</p>
-        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">3. 核心概念：</span>「整數除以分數」及「分數除以分數」＝<span class="text-yellow-300 font-bold">乘以除數的倒數</span>！</p>
-        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">4. 無限題庫：</span>純演算法隨機動態出題，每次體驗都是全新挑戰！</p>
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">1. 靶標射擊：</span>天空中有答案的翼龍，直接<span class="text-amber-300 font-bold">點擊/觸碰</span>正確答案發射！</p>
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">2. 核心概念：</span>「整數除以分數」及「分數除以分數」＝<span class="text-yellow-300 font-bold">乘以除數的倒數</span>！</p>
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">3. 無限題庫：</span>隨機出題，每次體驗都是全新挑戰！</p>
       </div>
 
       <button id="btn-start-game" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 hover:brightness-110 text-slate-950 text-xl font-black rounded-2xl shadow-xl transition transform active:scale-95">
@@ -372,7 +371,7 @@
         const simp = MathFraction.simplify(ansN, ansD);
 
         qData = {
-          topicTitle: "整數除以真分數",
+          topicTitle: "整數除以分數",
           type: "INT_DIV_FRAC",
           raw: { N, a, b },
           formulaHTML: `
@@ -922,7 +921,7 @@
           // 重新整理生命
           gameState.lives = 3;
           updateHUD();
-          showStepExplanationModal(false, "恐龍蛋受傷了！別灰心，看一下詳細推導步驟吧：");
+          showStepExplanationModal(false, "恐龍受傷了！別灰心，看一下詳細步驟吧：");
         } else {
           showStepExplanationModal(false, "差一點點！來看看這題的分數倒數計算方式：");
         }
@@ -954,7 +953,7 @@
 
       if (isCorrect) {
         icon.innerText = "🎯🦖";
-        title.innerText = "神準命中！回答正確！";
+        title.innerText = "神級射手！回答正確！";
         title.className = "text-2xl font-black text-amber-400 mb-2";
       } else {
         icon.innerText = "💡🦕";
