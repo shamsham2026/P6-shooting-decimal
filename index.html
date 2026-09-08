@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>恐龍神射手：分數除法大冒險</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+      overflow: hidden;
+      background-color: #0c1815;
+    }
+    
+    /* 專業垂直分數排版 (Math Fraction Typography) */
+    .math-expr {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .math-whole {
+      font-size: 1.35em;
+      margin-right: 0.2rem;
+      line-height: 1;
+    }
+    .math-frac {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      text-align: center;
+      padding: 0 0.25rem;
+      position: relative;
+    }
+    .math-num {
+      border-bottom: 2px solid currentColor;
+      padding-bottom: 2px;
+      display: block;
+      font-size: 0.9em;
+      line-height: 1.1;
+    }
+    .math-den {
+      padding-top: 2px;
+      display: block;
+      font-size: 0.9em;
+      line-height: 1.1;
+    }
+    .math-op {
+      margin: 0 0.5rem;
+      font-size: 1.25em;
+      color: #f59e0b;
+    }
+
+    /* 靶標卡片中的分數放大樣式 */
+    .target-bubble .math-frac {
+      padding: 0 0.2rem;
+    }
+    .target-bubble .math-num {
+      border-bottom-width: 2.5px;
+    }
+
+    /* 恐龍浮動與動畫效果 */
+    @keyframes dinoFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1.5deg); }
+    }
+    .animate-dino {
+      animation: dinoFloat 3s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }
+    }
+    .pulse-amber {
+      animation: pulseGlow 2s infinite;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen relative flex flex-col justify-between select-none bg-gradient-to-b from-slate-900 via-emerald-950 to-slate-950 text-white">
+
+  <!-- 頂部資訊與控制欄 (HUD) -->
+  <header class="w-full px-4 py-2 bg-black/40 backdrop-blur-md border-b border-emerald-800/60 z-30 flex items-center justify-between shadow-lg">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center bg-emerald-900/70 border border-emerald-500/40 rounded-2xl px-3 py-1.5 shadow-inner">
+        <span class="text-2xl mr-1.5">🦖</span>
+        <div>
+          <div class="text-xs text-emerald-300 font-bold">神射龍等級</div>
+          <div id="ui-level" class="text-lg font-black text-amber-400 leading-tight">Lv. 1 初級獵人</div>
+        </div>
+      </div>
+      <div class="hidden sm:flex items-center bg-amber-950/60 border border-amber-600/40 rounded-2xl px-3 py-1.5">
+        <span class="text-xl mr-1">🔥</span>
+        <span class="text-xs text-amber-300 font-bold mr-1">連擊:</span>
+        <span id="ui-streak" class="text-lg font-black text-amber-400">0</span>
+      </div>
+    </div>
+
+    <!-- 中間得分 -->
+    <div class="flex items-center bg-slate-900/80 border-2 border-emerald-500/60 rounded-3xl px-5 py-1.5 shadow-xl">
+      <span class="text-xs text-emerald-400 font-semibold mr-2 tracking-wider">分數</span>
+      <span id="ui-score" class="text-2xl md:text-3xl font-black text-yellow-300 tracking-wider">0</span>
+    </div>
+
+    <!-- 右側生命與按鈕 -->
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- 恐龍蛋生命值 -->
+      <div class="flex items-center space-x-1 bg-black/50 px-3 py-1.5 rounded-2xl border border-rose-900/50">
+        <span id="ui-lives" class="text-xl">🥚🥚🥚</span>
+      </div>
+      <!-- 圖形輔助切換 -->
+      <button id="btn-toggle-visual" class="bg-teal-700/80 hover:bg-teal-600 text-teal-100 p-2 sm:px-3 sm:py-1.5 rounded-xl border border-teal-400/50 flex items-center text-xs font-bold transition shadow active:scale-95">
+        <span class="text-lg sm:mr-1">🦕</span>
+        <span class="hidden sm:inline">圖形輔助</span>
+      </button>
+      <!-- 音效開關 -->
+      <button id="btn-sound" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 p-2 rounded-xl border border-emerald-500/50 active:scale-95 transition">
+        <span id="sound-icon" class="text-lg">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 核心題目看板 (垂直分數排版 + 恐龍圖形輔助) -->
+  <section class="w-full max-w-4xl mx-auto px-4 pt-2 z-20">
+    <div class="relative bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-emerald-900/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 border-2 border-amber-400/70 shadow-2xl pulse-amber">
+      <!-- 模式徽章 -->
+      <div class="absolute -top-3 left-6 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs px-3 py-0.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1">
+        <span>🎯</span> <span id="ui-topic-badge">整數除以分數</span>
+      </div>
+
+      <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+        <!-- 主題目算式 -->
+        <div class="flex-1 flex flex-col items-center md:items-start pl-2">
+          <div class="text-xs text-emerald-300 font-semibold mb-1 flex items-center gap-1">
+            <span>🦖 瞄準天空中的正確答案翼龍：</span>
+          </div>
+          <!-- 動態注入的垂直分數運算式容器 -->
+          <div id="question-formula" class="text-2xl sm:text-3xl md:text-4xl text-amber-200 tracking-wide font-black py-1 flex items-center flex-wrap justify-center md:justify-start">
+            <!-- 由 JS 動態繪製垂直排版分數 -->
+          </div>
+          <!-- 概念口訣提點 -->
+          <div id="question-concept-tip" class="text-xs text-teal-200/90 mt-1 flex items-center gap-1">
+            💡 秘訣：除以分數，等於乘以它的倒數！
+          </div>
+        </div>
+
+        <!-- 幾何與圖形化視覺輔助 (恐龍蛋比例圖/數線圖 Canvas) -->
+        <div id="visual-aid-container" class="bg-black/40 rounded-xl p-2 border border-emerald-600/40 flex items-center gap-2">
+          <div class="flex flex-col items-center">
+            <span class="text-[10px] text-amber-300 font-bold mb-1">視覺圖像化模型</span>
+            <canvas id="visual-canvas" width="160" height="70" class="rounded bg-emerald-950/70 border border-emerald-700/50 shadow"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 遊戲主要戰鬥畫布 (天空、飛行翼龍靶標、火山噴發、發射子彈) -->
+  <main class="relative flex-1 w-full h-full overflow-hidden">
+    <canvas id="game-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+    <!-- 底部觸控指引 (平板友善) -->
+    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none bg-black/40 backdrop-blur-sm px-4 py-1 rounded-full border border-emerald-500/30 text-emerald-200 text-xs text-center flex items-center gap-1">
+      <span>📱 點擊空中攜帶正確答案的翼龍即可發射龍蛋火球！</span>
+    </div>
+  </main>
+
+  <!-- 詳細步驟解題提示視窗 (答題後的即時教學) -->
+  <div id="step-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-slate-900 via-emerald-950 to-slate-900 border-2 border-amber-500 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center transform transition-all scale-95">
+      <div id="step-modal-icon" class="text-5xl mb-2">🎉</div>
+      <h3 id="step-modal-title" class="text-2xl font-black text-amber-400 mb-2">太棒了！答對了！</h3>
+      
+      <!-- 解題步驟推導 -->
+      <div id="step-modal-content" class="bg-black/50 rounded-2xl p-4 my-4 text-left border border-emerald-800 text-emerald-100 space-y-3 font-medium text-sm sm:text-base">
+        <!-- JS 動態填入完整倒數計算推導過程 -->
+      </div>
+
+      <button id="btn-next-question" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black text-lg rounded-2xl shadow-lg active:scale-98 transition">
+        下一題 🦖 (繼續挑戰)
+      </button>
+    </div>
+  </div>
+
+  <!-- 開始與遊戲結束視窗 -->
+  <div id="start-modal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-emerald-950 to-slate-900 border-4 border-amber-500 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center shadow-2xl">
+      <div class="text-6xl mb-3 animate-bounce">🦖💥🎯</div>
+      <h1 class="text-3xl sm:text-4xl font-black text-amber-400 tracking-wider mb-2">恐龍神射手</h1>
+      <h2 class="text-lg font-bold text-emerald-300 mb-4">分數除法與四則運算訓練基地</h2>
+      
+      <div class="bg-black/40 rounded-2xl p-4 text-left border border-emerald-800/80 mb-5 text-emerald-100 text-sm space-y-2.5">
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">1. 靶標射擊：</span>天空中有攜帶答案的翼龍，直接<span class="text-amber-300 font-bold">點擊/觸碰</span>正確答案發射恐龍火球！</p>
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">2. 精確分數：</span>全部使用標準垂直上下分數排版，無斜線困擾。</p>
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">3. 核心概念：</span>「整數除以分數」及「分數除以分數」＝<span class="text-yellow-300 font-bold">乘以除數的倒數</span>！</p>
+        <p class="flex items-center gap-2"><span class="text-amber-400 font-bold">4. 無限題庫：</span>純演算法隨機動態出題，每次體驗都是全新挑戰！</p>
+      </div>
+
+      <button id="btn-start-game" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 hover:brightness-110 text-slate-950 text-xl font-black rounded-2xl shadow-xl transition transform active:scale-95">
+        開始練習 🚀
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 純 Web Audio API 音效合成引擎 (無外部依賴)
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playShoot() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      }
+      playHit(correct) {
+        if (!this.enabled) return;
+        this.init();
+        if (correct) {
+          // 成功三和弦 Ding-Ding-Ding!
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.08);
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.08 + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + idx * 0.08);
+            osc.stop(this.ctx.currentTime + idx * 0.08 + 0.35);
+          });
+        } else {
+          // 錯誤低音咚聲
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.3);
+        }
+      }
+    }
+    const sounds = new SoundEngine();
+
+    // 專業分數運算與約分演算法
+    const MathFraction = {
+      gcd(a, b) {
+        a = Math.abs(a);
+        b = Math.abs(b);
+        while (b) {
+          let t = b;
+          b = a % b;
+          a = t;
+        }
+        return a;
+      },
+      // 約分至最簡分數：傳入分子 n, 分母 d
+      simplify(n, d) {
+        if (d === 0) return { n: 0, d: 1 };
+        const g = this.gcd(n, d);
+        let num = n / g;
+        let den = d / g;
+        if (den < 0) {
+          num = -num;
+          den = -den;
+        }
+        return { n: num, d: den };
+      },
+      // 轉為帶分數物件 { whole, n, d }
+      toMixed(n, d) {
+        const sim = this.simplify(n, d);
+        if (sim.d === 1) {
+          return { whole: sim.n, n: 0, d: 1, isWhole: true };
+        }
+        const whole = Math.floor(sim.n / sim.d);
+        const remN = sim.n % sim.d;
+        return { whole: whole, n: remN, d: sim.d, isWhole: whole > 0 && remN === 0 };
+      },
+      // 生成標準 HTML 垂直分數排版結構
+      renderHTML(n, d, preferMixed = true) {
+        const simp = this.simplify(n, d);
+        if (simp.d === 1) {
+          return `<span class="math-expr"><span class="math-whole">${simp.n}</span></span>`;
+        }
+        if (preferMixed && simp.n > simp.d) {
+          const whole = Math.floor(simp.n / simp.d);
+          const remN = simp.n % simp.d;
+          if (remN === 0) {
+            return `<span class="math-expr"><span class="math-whole">${whole}</span></span>`;
+          }
+          return `<span class="math-expr">
+            <span class="math-whole">${whole}</span>
+            <span class="math-frac">
+              <span class="math-num">${remN}</span>
+              <span class="math-den">${simp.d}</span>
+            </span>
+          </span>`;
+        }
+        return `<span class="math-expr">
+          <span class="math-frac">
+            <span class="math-num">${simp.n}</span>
+            <span class="math-den">${simp.d}</span>
+          </span>
+        </span>`;
+      }
+    };
+
+    // 純演算法隨機動態出題函數 (無限題庫)
+    function generateQuestion(level = 1) {
+      // 題型 1: 整數除以分數 (N ÷ a/b)
+      // 題型 2: 分數除以分數 (a/b ÷ c/d)
+      // 題型 3: 帶分數除法或簡易四則運算 (混合加減)
+      let type = 1;
+      if (level === 1) {
+        type = 1; // 專注整數除以分數
+      } else if (level === 2) {
+        type = Math.random() < 0.4 ? 1 : 2; // 整數除以分數 + 分數除以分數
+      } else {
+        type = Math.random() < 0.3 ? 1 : (Math.random() < 0.65 ? 2 : 3);
+      }
+
+      let qData = {};
+
+      if (type === 1) {
+        // 【整數除以分數】：N ÷ (a / b)
+        // 例如 3 ÷ (3/4) = 3 × 4/3 = 4，或者 2 ÷ (2/5) = 5
+        const b = [2, 3, 4, 5, 6, 8, 10][Math.floor(Math.random() * 7)];
+        const a = Math.floor(Math.random() * (b - 1)) + 1;
+        // 為了教學友好，讓約分或答案乾淨，部分題目整除，部分題目產生乾淨分數
+        const N = Math.floor(Math.random() * 5) + 2; // 2 ~ 6
+
+        // 計算結果: N ÷ (a/b) = (N * b) / a
+        const ansN = N * b;
+        const ansD = a;
+        const simp = MathFraction.simplify(ansN, ansD);
+
+        qData = {
+          topicTitle: "整數除以真分數",
+          type: "INT_DIV_FRAC",
+          raw: { N, a, b },
+          formulaHTML: `
+            <span class="math-expr"><span class="math-whole">${N}</span></span>
+            <span class="math-op">÷</span>
+            ${MathFraction.renderHTML(a, b, false)}
+            <span class="math-op">=</span>
+            <span class="text-amber-400 font-black">?</span>
+          `,
+          targetAns: simp,
+          stepHint: `
+            <p>1. <b>題目</b>：${N} ÷ <span class="math-frac"><span class="math-num">${a}</span><span class="math-den">${b}</span></span></p>
+            <p>2. <b>除以分數 ＝ 乘以倒數</b>：</p>
+            <p class="pl-3">${N} × <span class="math-frac"><span class="math-num">${b}</span><span class="math-den">${a}</span></span> ＝ <span class="math-frac"><span class="math-num">${N} × ${b}</span><span class="math-den">${a}</span></span> ＝ <span class="math-frac"><span class="math-num">${ansN}</span><span class="math-den">${ansD}</span></span></p>
+            <p>3. <b>最簡化或帶分數</b>：${MathFraction.renderHTML(ansN, ansD, true)}</p>
+          `,
+          visualType: 'circle-contain',
+          visualParams: { whole: N, partN: a, partD: b }
+        };
+
+      } else if (type === 2) {
+        // 【分數除以分數】：(a/b) ÷ (c/d)
+        // 例如 (3/4) ÷ (1/2) = 3/4 × 2/1 = 3/2 = 1又1/2
+        const b = [2, 3, 4, 5, 6, 8][Math.floor(Math.random() * 6)];
+        const a = Math.floor(Math.random() * (b - 1)) + 1;
+        
+        const d = [2, 3, 4, 5, 6, 8][Math.floor(Math.random() * 6)];
+        const c = Math.floor(Math.random() * (d - 1)) + 1;
+
+        const ansN = a * d;
+        const ansD = b * c;
+        const simp = MathFraction.simplify(ansN, ansD);
+
+        qData = {
+          topicTitle: "分數除以分數",
+          type: "FRAC_DIV_FRAC",
+          raw: { a, b, c, d },
+          formulaHTML: `
+            ${MathFraction.renderHTML(a, b, false)}
+            <span class="math-op">÷</span>
+            ${MathFraction.renderHTML(c, d, false)}
+            <span class="math-op">=</span>
+            <span class="text-amber-400 font-black">?</span>
+          `,
+          targetAns: simp,
+          stepHint: `
+            <p>1. <b>題目</b>：${MathFraction.renderHTML(a, b, false)} ÷ ${MathFraction.renderHTML(c, d, false)}</p>
+            <p>2. <b>將除數轉為倒數相乘</b>：</p>
+            <p class="pl-3">${MathFraction.renderHTML(a, b, false)} × ${MathFraction.renderHTML(d, c, false)} ＝ <span class="math-frac"><span class="math-num">${a} × ${d}</span><span class="math-den">${b} × ${c}</span></span> ＝ <span class="math-frac"><span class="math-num">${ansN}</span><span class="math-den">${ansD}</span></span></p>
+            <p>3. <b>化為最簡分數</b>：${MathFraction.renderHTML(ansN, ansD, true)}</p>
+          `,
+          visualType: 'bar-fraction',
+          visualParams: { a, b, c, d }
+        };
+
+      } else {
+        // 【帶分數或混合運算】：例如 1又1/2 ÷ 3/4 或 (1/2 + 1/4) ÷ 1/4
+        const whole = 1;
+        const b = [2, 3, 4][Math.floor(Math.random() * 3)];
+        const a = 1;
+        // 帶分數化假分數: (whole * b + a) / b
+        const impN = whole * b + a;
+        const impD = b;
+
+        const d = [2, 4, 6][Math.floor(Math.random() * 3)];
+        const c = Math.floor(Math.random() * (d - 1)) + 1;
+
+        const ansN = impN * d;
+        const ansD = impD * c;
+        const simp = MathFraction.simplify(ansN, ansD);
+
+        qData = {
+          topicTitle: "帶分數除法運算",
+          type: "MIXED_DIV",
+          formulaHTML: `
+            <span class="math-expr">
+              <span class="math-whole">${whole}</span>
+              <span class="math-frac"><span class="math-num">${a}</span><span class="math-den">${b}</span></span>
+            </span>
+            <span class="math-op">÷</span>
+            ${MathFraction.renderHTML(c, d, false)}
+            <span class="math-op">=</span>
+            <span class="text-amber-400 font-black">?</span>
+          `,
+          targetAns: simp,
+          stepHint: `
+            <p>1. <b>第一步：先將帶分數化為假分數</b>：</p>
+            <p class="pl-3">${whole}又${MathFraction.renderHTML(a, b, false)} ＝ <span class="math-frac"><span class="math-num">${impN}</span><span class="math-den">${impD}</span></span></p>
+            <p>2. <b>除以除數 ＝ 乘以倒數</b>：</p>
+            <p class="pl-3"><span class="math-frac"><span class="math-num">${impN}</span><span class="math-den">${impD}</span></span> × ${MathFraction.renderHTML(d, c, false)} ＝ <span class="math-frac"><span class="math-num">${ansN}</span><span class="math-den">${ansD}</span></span></p>
+            <p>3. <b>約分後答案</b>：${MathFraction.renderHTML(ansN, ansD, true)}</p>
+          `,
+          visualType: 'number-line',
+          visualParams: { max: 3, stepVal: c/d }
+        };
+      }
+
+      // 智能干擾項生成演算法 (產生 3 個具迷惑性的錯解，例如忘記倒數、直接乘法、顛倒被除數等常見學生迷思)
+      const options = [];
+      const correctSimp = qData.targetAns;
+      options.push({ n: correctSimp.n, d: correctSimp.d, isCorrect: true });
+
+      // 干擾1: 忘記取倒數，直接分子分母相乘
+      let d1 = MathFraction.simplify(correctSimp.d, correctSimp.n);
+      if (d1.n === correctSimp.n && d1.d === correctSimp.d) {
+        d1 = MathFraction.simplify(correctSimp.n + 1, correctSimp.d);
+      }
+      options.push({ n: d1.n, d: d1.d, isCorrect: false });
+
+      // 干擾2: 分子或分母加減 1 (計算粗心)
+      let d2 = MathFraction.simplify(Math.max(1, correctSimp.n - 1), correctSimp.d);
+      if (d2.n === correctSimp.n && d2.d === correctSimp.d) {
+        d2 = MathFraction.simplify(correctSimp.n + 2, correctSimp.d);
+      }
+      options.push({ n: d2.n, d: d2.d, isCorrect: false });
+
+      // 干擾3: 乘倍數干擾
+      let d3 = MathFraction.simplify(correctSimp.n, correctSimp.d + 1);
+      if (options.some(o => o.n === d3.n && o.d === d3.d)) {
+        d3 = MathFraction.simplify(correctSimp.n * 2, correctSimp.d * 2 + 1);
+      }
+      options.push({ n: d3.n, d: d3.d, isCorrect: false });
+
+      // 洗牌答案陣列
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+      }
+
+      qData.options = options;
+      return qData;
+    }
+
+    // 多元題目型態：在右上角繪製「圓形比例圖」或「數線等分圖」幫助直觀理解
+    function drawVisualAid(q) {
+      const cvs = document.getElementById('visual-canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width;
+      const h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      if (q.visualType === 'circle-contain') {
+        // 繪製整數個恐龍蛋/圓形，並標示每 a/b 為一份
+        const count = Math.min(q.visualParams.whole, 4);
+        const radius = 14;
+        const spacing = w / (count + 1);
+        for (let i = 1; i <= count; i++) {
+          const cx = spacing * i;
+          const cy = h / 2;
+          // 畫底圓 (像恐龍蛋形狀)
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, radius * 0.85, radius, 0, 0, Math.PI * 2);
+          ctx.fillStyle = '#064e3b';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#10b981';
+          ctx.stroke();
+
+          // 等分切線
+          const slices = q.visualParams.partD;
+          for (let s = 0; s < slices; s++) {
+            const angle = (Math.PI * 2 / slices) * s - Math.PI / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle) * radius * 0.85, cy + Math.sin(angle) * radius);
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+        }
+      } else if (q.visualType === 'bar-fraction') {
+        // 雙層比例長條圖 (分子分母對比)
+        const barH = 14;
+        const padX = 15;
+        const barW = w - padX * 2;
+
+        // 第一條 (被除數)
+        ctx.fillStyle = '#047857';
+        ctx.fillRect(padX, 15, barW, barH);
+        ctx.strokeStyle = '#34d399';
+        ctx.strokeRect(padX, 15, barW, barH);
+
+        const { a, b, c, d } = q.visualParams;
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(padX, 15, barW * (a / b), barH);
+
+        // 第二條 (除數單位等分)
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(padX, 42, barW, barH);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.strokeRect(padX, 42, barW, barH);
+
+        // 標記 c/d 長度
+        ctx.fillStyle = '#f87171';
+        ctx.fillRect(padX, 42, barW * (c / d), barH);
+
+        ctx.fillStyle = '#a7f3d0';
+        ctx.font = '10px Fredoka, sans-serif';
+        ctx.fillText(`被除數: ${a}/${b}`, padX, 12);
+        ctx.fillText(`除數單位: ${c}/${d}`, padX, 39);
+      } else {
+        // 數線模型
+        ctx.beginPath();
+        ctx.moveTo(10, h / 2);
+        ctx.lineTo(w - 10, h / 2);
+        ctx.strokeStyle = '#6ee7b7';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // 刻度
+        for (let i = 0; i <= 4; i++) {
+          const x = 15 + (w - 30) * (i / 4);
+          ctx.beginPath();
+          ctx.moveTo(x, h / 2 - 6);
+          ctx.lineTo(x, h / 2 + 6);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = '#fef08a';
+          ctx.font = '9px Fredoka';
+          ctx.fillText(i, x - 3, h / 2 + 18);
+        }
+      }
+    }
+
+    // 主遊戲 Canvas 引擎與恐龍實體管理
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 遊戲運行狀態
+    const gameState = {
+      score: 0,
+      streak: 0,
+      level: 1,
+      lives: 3,
+      currentQ: null,
+      pterodactyls: [],
+      particles: [],
+      projectiles: [],
+      cannonAngle: -Math.PI / 2,
+      isPaused: false,
+      lastSpawnTime: 0
+    };
+
+    // 調整畫布大小 (自適應高解析度螢幕與平板直橫向)
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // 飛行翼龍實體 (攜帶分數標靶)
+    class Pterodactyl {
+      constructor(x, y, speed, optionData, index) {
+        this.x = x;
+        this.y = y;
+        this.baseY = y;
+        this.speed = speed;
+        this.optionData = optionData;
+        this.index = index;
+        this.wingAngle = 0;
+        this.floatOffset = Math.random() * 10;
+        this.width = 110;
+        this.height = 70;
+        this.isDying = false;
+        this.alpha = 1.0;
+      }
+
+      update(dt) {
+        this.x += this.speed * dt;
+        this.wingAngle += 0.15;
+        this.y = this.baseY + Math.sin(this.wingAngle + this.floatOffset) * 12;
+
+        const viewW = canvas.width / window.devicePixelRatio;
+        if (this.speed > 0 && this.x > viewW + 100) {
+          this.x = -120;
+        } else if (this.speed < 0 && this.x < -120) {
+          this.x = viewW + 100;
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        if (this.speed < 0) ctx.scale(-1, 1);
+
+        // 繪製恐龍翼龍本體 (SVG風格簡約幾何插畫)
+        // 翅膀拍動
+        const wingFlap = Math.sin(this.wingAngle) * 20;
+
+        ctx.fillStyle = '#059669'; // 恐龍綠
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 2;
+
+        // 身體與長喙
+        ctx.beginPath();
+        ctx.moveTo(35, -5);
+        ctx.lineTo(60, 0); // 尖喙
+        ctx.lineTo(30, 8);
+        ctx.lineTo(10, 12);
+        ctx.lineTo(-25, 6);
+        ctx.lineTo(-35, -2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 翅膀
+        ctx.beginPath();
+        ctx.moveTo(5, -2);
+        ctx.lineTo(-10, -35 - wingFlap);
+        ctx.lineTo(20, -15);
+        ctx.closePath();
+        ctx.fillStyle = '#10b981';
+        ctx.fill();
+        ctx.stroke();
+
+        // 恐龍眼睛
+        ctx.beginPath();
+        ctx.arc(32, -1, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fef08a';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(33, -1, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+
+        // 爪子抓著恐龍蛋標靶 (分數牌)
+        ctx.restore();
+
+        // 分數卡牌始終保持正向 (不水平鏡像)，確保學生閱讀
+        ctx.save();
+        ctx.translate(this.x, this.y + 36);
+
+        // 卡片底盤 (恐龍木質/恐龍蛋盾牌風格)
+        ctx.beginPath();
+        ctx.roundRect(-42, -26, 84, 52, 14);
+        ctx.fillStyle = '#1e293b';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.stroke();
+
+        // 繪製垂直分數至 Canvas (乾淨排版：分子/分母/整數)
+        this.drawFractionOnCanvas(ctx, this.optionData);
+
+        ctx.restore();
+      }
+
+      drawFractionOnCanvas(ctx, opt) {
+        const simp = MathFraction.simplify(opt.n, opt.d);
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (simp.d === 1) {
+          // 純整數
+          ctx.font = 'bold 24px Fredoka, sans-serif';
+          ctx.fillStyle = '#fde047';
+          ctx.fillText(simp.n, 0, 1);
+        } else if (simp.n > simp.d) {
+          // 帶分數：整數 + 垂直真分數
+          const whole = Math.floor(simp.n / simp.d);
+          const remN = simp.n % simp.d;
+
+          ctx.font = 'bold 20px Fredoka, sans-serif';
+          ctx.fillStyle = '#fde047';
+          ctx.fillText(whole, -18, 0);
+
+          // 垂直分數線
+          ctx.font = 'bold 13px Fredoka, sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(remN, 14, -10);
+
+          ctx.beginPath();
+          ctx.moveTo(4, 0);
+          ctx.lineTo(24, 0);
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+
+          ctx.fillText(simp.d, 14, 11);
+        } else {
+          // 純真分數：垂直排列
+          ctx.font = 'bold 15px Fredoka, sans-serif';
+          ctx.fillText(simp.n, 0, -10);
+
+          ctx.beginPath();
+          ctx.moveTo(-16, 0);
+          ctx.lineTo(16, 0);
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+
+          ctx.fillText(simp.d, 0, 11);
+        }
+      }
+
+      // 檢查觸控點擊是否落在翼龍或其分數蛋牌上
+      isClicked(px, py) {
+        const dx = px - this.x;
+        const dy = py - (this.y + 15);
+        return Math.hypot(dx, dy) < 48;
+      }
+    }
+
+    // 發射火球砲彈與打擊粒子效果
+    class Projectile {
+      constructor(startX, startY, targetX, targetY, targetPtero) {
+        this.x = startX;
+        this.y = startY;
+        this.targetPtero = targetPtero;
+        const angle = Math.atan2(targetY - startY, targetX - startX);
+        const speed = 900; // 快速流暢的平板反饋
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.dead = false;
+      }
+      update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+
+        // 檢查是否命中目標
+        const dist = Math.hypot(this.targetPtero.x - this.x, (this.targetPtero.y + 25) - this.y);
+        if (dist < 35) {
+          this.dead = true;
+          handleTargetHit(this.targetPtero);
+        }
+      }
+      draw(ctx) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#f97316';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#fef08a';
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 200 + 50;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.alpha = 1.0;
+        this.size = Math.random() * 6 + 4;
+      }
+      update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.alpha -= 1.8 * dt;
+      }
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // 初始化一道新題目並生成 4 隻攜帶選項的飛行翼龍
+    function loadNextQuestion() {
+      const q = generateQuestion(gameState.level);
+      gameState.currentQ = q;
+
+      // 更新 HUD 題目看板
+      document.getElementById('ui-topic-badge').innerText = q.topicTitle;
+      document.getElementById('question-formula').innerHTML = q.formulaHTML;
+
+      // 繪製多元幾何視覺化模型
+      drawVisualAid(q);
+
+      // 生成翼龍靶標群 (分佈在天空不同高度，交錯飛行)
+      const viewW = canvas.width / window.devicePixelRatio;
+      const viewH = canvas.height / window.devicePixelRatio;
+      
+      gameState.pterodactyls = [];
+      const lanes = [viewH * 0.18, viewH * 0.35, viewH * 0.52, viewH * 0.26];
+
+      q.options.forEach((opt, idx) => {
+        const laneY = lanes[idx % lanes.length];
+        const dir = idx % 2 === 0 ? 1 : -1;
+        const startX = dir > 0 ? -60 - (idx * 80) : viewW + 60 + (idx * 80);
+        const speed = (Math.random() * 25 + 40) * dir; // 溫和穩定的飛行速度，利於閱讀分數
+        gameState.pterodactyls.push(new Pterodactyl(startX, laneY, speed, opt, idx));
+      });
+    }
+
+    // 發射龍蛋火球
+    function fireAtTarget(targetPtero) {
+      if (gameState.isPaused) return;
+      const viewW = canvas.width / window.devicePixelRatio;
+      const viewH = canvas.height / window.devicePixelRatio;
+      const cannonX = viewW / 2;
+      const cannonY = viewH - 20;
+
+      gameState.projectiles.push(new Projectile(cannonX, cannonY, targetPtero.x, targetPtero.y + 25, targetPtero));
+      sounds.playShoot();
+    }
+
+    // 當子彈命中目標翼龍
+    function handleTargetHit(ptero) {
+      const isCorrect = ptero.optionData.isCorrect;
+
+      // 爆炸粒子
+      for (let i = 0; i < 20; i++) {
+        const color = isCorrect ? ['#fbbf24', '#34d399', '#fef08a'][i % 3] : ['#ef4444', '#f87171', '#78716c'][i % 3];
+        gameState.particles.push(new Particle(ptero.x, ptero.y + 25, color));
+      }
+
+      sounds.playHit(isCorrect);
+
+      if (isCorrect) {
+        // 答對邏輯
+        gameState.streak++;
+        const bonus = gameState.streak * 20;
+        gameState.score += 100 + bonus;
+        if (gameState.streak >= 3 && gameState.level === 1) {
+          gameState.level = 2;
+        } else if (gameState.streak >= 6 && gameState.level === 2) {
+          gameState.level = 3;
+        }
+        updateHUD();
+
+        // 彈出圖解詳解視窗
+        showStepExplanationModal(true);
+      } else {
+        // 答錯扣恐龍蛋生命
+        gameState.streak = 0;
+        gameState.lives--;
+        updateHUD();
+
+        if (gameState.lives <= 0) {
+          // 重新整理生命
+          gameState.lives = 3;
+          updateHUD();
+          showStepExplanationModal(false, "恐龍蛋受傷了！別灰心，看一下詳細推導步驟吧：");
+        } else {
+          showStepExplanationModal(false, "差一點點！來看看這題的分數倒數計算方式：");
+        }
+      }
+    }
+
+    function updateHUD() {
+      document.getElementById('ui-score').innerText = gameState.score;
+      document.getElementById('ui-streak').innerText = gameState.streak;
+      
+      const levelNames = ["Lv.1 初級獵人", "Lv.2 進階射手", "Lv.3 霸王龍大師"];
+      document.getElementById('ui-level').innerText = levelNames[gameState.level - 1] || "Lv.MAX";
+
+      // 生命恐龍蛋圖示
+      let eggs = '';
+      for (let i = 0; i < 3; i++) {
+        eggs += i < gameState.lives ? '🥚' : '🍳';
+      }
+      document.getElementById('ui-lives').innerText = eggs;
+    }
+
+    // 顯示詳細推導步驟視窗
+    function showStepExplanationModal(isCorrect, customTitle) {
+      gameState.isPaused = true;
+      const modal = document.getElementById('step-modal');
+      const title = document.getElementById('step-modal-title');
+      const icon = document.getElementById('step-modal-icon');
+      const content = document.getElementById('step-modal-content');
+
+      if (isCorrect) {
+        icon.innerText = "🎯🦖";
+        title.innerText = "神準命中！回答正確！";
+        title.className = "text-2xl font-black text-amber-400 mb-2";
+      } else {
+        icon.innerText = "💡🦕";
+        title.innerText = customTitle || "思考時間：來看看怎麼算！";
+        title.className = "text-2xl font-black text-emerald-300 mb-2";
+      }
+
+      content.innerHTML = gameState.currentQ.stepHint;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    document.getElementById('btn-next-question').addEventListener('click', () => {
+      document.getElementById('step-modal').classList.add('hidden');
+      document.getElementById('step-modal').classList.remove('flex');
+      gameState.isPaused = false;
+      loadNextQuestion();
+    });
+
+    function drawBackground(ctx, w, h) {
+      // 遠處火山與侏羅紀剪影
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#061a14');
+      grad.addColorStop(0.6, '#064e3b');
+      grad.addColorStop(1, '#022c22');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // 火山剪影
+      ctx.beginPath();
+      ctx.moveTo(w * 0.1, h);
+      ctx.lineTo(w * 0.28, h * 0.65);
+      ctx.lineTo(w * 0.35, h * 0.68);
+      ctx.lineTo(w * 0.48, h);
+      ctx.fillStyle = '#022119';
+      ctx.fill();
+
+      // 火山微弱橘紅熔岩光芒
+      ctx.beginPath();
+      ctx.arc(w * 0.31, h * 0.66, 16, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+      ctx.fill();
+    }
+
+    function drawPlayerTrex(ctx, w, h) {
+      // 底部中央的守護暴龍砲手
+      const tx = w / 2;
+      const ty = h - 25;
+
+      ctx.save();
+      ctx.translate(tx, ty);
+
+      // 砲台基座 (古代恐龍岩石)
+      ctx.beginPath();
+      ctx.ellipse(0, 15, 60, 25, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 小暴龍砲手造型
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(0, -10, 26, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 暴龍眼睛
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(-8, -14, 5, 0, Math.PI * 2);
+      ctx.arc(8, -14, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(-8, -14, 2.5, 0, Math.PI * 2);
+      ctx.arc(8, -14, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 龍蛋發射砲管
+      ctx.rotate(gameState.cannonAngle + Math.PI / 2);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(-8, -48, 16, 32);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-8, -48, 16, 32);
+
+      ctx.restore();
+    }
+
+    // 平板觸控與滑鼠點擊判定：直接點擊翼龍立即射擊
+    function handlePointerDown(e) {
+      if (gameState.isPaused) return;
+
+      const rect = canvas.getBoundingClientRect();
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+
+      const px = clientX - rect.left;
+      const py = clientY - rect.top;
+
+      // 更新砲台旋轉角度朝向觸控點
+      const viewW = canvas.width / window.devicePixelRatio;
+      const viewH = canvas.height / window.devicePixelRatio;
+      gameState.cannonAngle = Math.atan2(py - (viewH - 25), px - (viewW / 2));
+
+      // 檢查是否點擊到了任一隻攜帶答案的翼龍
+      for (const ptero of gameState.pterodactyls) {
+        if (ptero.isClicked(px, py)) {
+          fireAtTarget(ptero);
+          return;
+        }
+      }
+
+      // 若未直接點中翼龍，則自動選取最近的一隻發射，提供流暢的平板打擊體驗
+      let nearest = null;
+      let minDist = 120;
+      for (const ptero of gameState.pterodactyls) {
+        const d = Math.hypot(ptero.x - px, (ptero.y + 25) - py);
+        if (d < minDist) {
+          minDist = d;
+          nearest = ptero;
+        }
+      }
+      if (nearest) {
+        fireAtTarget(nearest);
+      }
+    }
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+
+    // 音效開關切換
+    document.getElementById('btn-sound').addEventListener('click', () => {
+      sounds.enabled = !sounds.enabled;
+      document.getElementById('sound-icon').innerText = sounds.enabled ? '🔊' : '🔇';
+    });
+
+    // 視覺圖形輔助卡片展開/隱藏切換
+    document.getElementById('btn-toggle-visual').addEventListener('click', () => {
+      const el = document.getElementById('visual-aid-container');
+      el.classList.toggle('hidden');
+    });
+
+    // 開始遊戲按鈕
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      sounds.init();
+      document.getElementById('start-modal').classList.add('hidden');
+      resizeCanvas();
+      loadNextQuestion();
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    });
+
+    let lastTime = performance.now();
+
+    function gameLoop(currentTime) {
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+      lastTime = currentTime;
+
+      const viewW = canvas.width / window.devicePixelRatio;
+      const viewH = canvas.height / window.devicePixelRatio;
+
+      ctx.clearRect(0, 0, viewW, viewH);
+
+      // 1. 繪製侏羅紀背景
+      drawBackground(ctx, viewW, viewH);
+
+      // 2. 更新與繪製翼龍靶標
+      if (!gameState.isPaused) {
+        for (const ptero of gameState.pterodactyls) {
+          ptero.update(dt);
+        }
+      }
+      for (const ptero of gameState.pterodactyls) {
+        ptero.draw(ctx);
+      }
+
+      // 3. 更新與繪製子彈
+      for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+        const p = gameState.projectiles[i];
+        if (!gameState.isPaused) p.update(dt);
+        p.draw(ctx);
+        if (p.dead) {
+          gameState.projectiles.splice(i, 1);
+        }
+      }
+
+      // 4. 更新與繪製打擊爆破粒子
+      for (let i = gameState.particles.length - 1; i >= 0; i--) {
+        const pt = gameState.particles[i];
+        pt.update(dt);
+        pt.draw(ctx);
+        if (pt.alpha <= 0) {
+          gameState.particles.splice(i, 1);
+        }
+      }
+
+      // 5. 繪製底部暴龍守護者砲台
+      drawPlayerTrex(ctx, viewW, viewH);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 視窗載入完成後初始化尺寸
+    window.onload = function() {
+      resizeCanvas();
+    };
+  </script>
+</body>
+</html>
